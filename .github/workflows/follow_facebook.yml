@@ -33,35 +33,26 @@ jobs:
           INPUT_KEY: ${{ github.event.inputs.key }}
           INPUT_LINK: ${{ github.event.inputs.link }}
 
-      - name: Read Result File
-        id: read_result
+      - name: Prepare Result for Webhook
+        id: prepare
         if: always()
         run: |
           if [ -f result.txt ]; then
-            echo "RESULT<<EOF" >> $GITHUB_ENV
-            cat result.txt >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
-            echo "FILE_EXISTS=true" >> $GITHUB_ENV
+            # Đọc nội dung file và mã hóa URL
+            CONTENT=$(cat result.txt)
+            # Mã hóa bằng Python để an toàn
+            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$CONTENT'''))")
+            echo "RESULT=$ENCODED" >> $GITHUB_ENV
+            echo "HAS_RESULT=true" >> $GITHUB_ENV
           else
-            echo "FILE_EXISTS=false" >> $GITHUB_ENV
-            echo "RESULT=Lỗi: Không tìm thấy file result.txt" >> $GITHUB_ENV
+            echo "RESULT=Khong%20tim%20thay%20file%20result.txt" >> $GITHUB_ENV
+            echo "HAS_RESULT=false" >> $GITHUB_ENV
           fi
 
-      - name: Send to Webhook
+      - name: Send to Webhook (GET)
         if: always()
         run: |
-          if [ "${{ env.FILE_EXISTS }}" == "true" ]; then
-         
-            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${{ env.RESULT }}'''))")
-          else
-            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${{ env.RESULT }}'''))")
-          fi
-          
-          curl -X POST https://vphuc.online/api/webhook.php \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "result=$ENCODED" \
-            -w "\nHTTP Code: %{http_code}\n" \
-            --fail --silent --show-error
+          curl -v "https://vphuc.online/api/webhook.php?result=${{ env.RESULT }}"
 
       - name: Upload Logs
         if: always()
