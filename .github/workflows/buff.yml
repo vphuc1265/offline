@@ -33,14 +33,33 @@ jobs:
           INPUT_KEY: ${{ github.event.inputs.key }}
           INPUT_LINK: ${{ github.event.inputs.link }}
 
-      - name: Prepare Result for Webhook
+      - name: Check Files
+        if: always()
+        run: |
+          echo "=== DANH SÁCH FILES ==="
+          ls -la
+          echo ""
+          echo "=== NỘI DUNG result.txt ==="
+          if [ -f result.txt ]; then
+            cat result.txt
+          else
+            echo "KHÔNG CÓ FILE result.txt"
+          fi
+          echo ""
+          echo "=== NỘI DUNG debug.log ==="
+          if [ -f debug.log ]; then
+            cat debug.log
+          else
+            echo "KHÔNG CÓ FILE debug.log"
+          fi
+
+      - name: Prepare Result
         id: prepare
         if: always()
         run: |
           if [ -f result.txt ]; then
-            # Đọc nội dung file và mã hóa URL
             CONTENT=$(cat result.txt)
-            # Mã hóa bằng Python để an toàn
+            # Mã hóa URL bằng Python
             ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$CONTENT'''))")
             echo "RESULT=$ENCODED" >> $GITHUB_ENV
             echo "HAS_RESULT=true" >> $GITHUB_ENV
@@ -49,9 +68,10 @@ jobs:
             echo "HAS_RESULT=false" >> $GITHUB_ENV
           fi
 
-      - name: Send to Webhook (GET)
+      - name: Send to Webhook
         if: always()
         run: |
+          echo "Gửi kết quả: ${{ env.RESULT }}"
           curl -v "https://vphuc.online/api/webhook.php?result=${{ env.RESULT }}"
 
       - name: Upload Logs
