@@ -16,24 +16,60 @@ jobs:
   buff:
     runs-on: ubuntu-latest
     steps:
-      - name: CheckOut Code
+      - name: Checkout Code
         uses: actions/checkout@v3
-      
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
-          extensions: curl, json
-      
+          extensions: curl, json, fileinfo
+
       - name: Run Script
         id: run_script
+        continue-on-error: true
         run: php buff.php
         env:
           INPUT_KEY: ${{ github.event.inputs.key }}
           INPUT_LINK: ${{ github.event.inputs.link }}
-      
-      - name: Send Result to Webhook
+
+      - name: Read Result File
+        id: read_result
+        if: always()
         run: |
+          if [ -f result.txt ]; then
+            echo "RESULT<<EOF" >> $GITHUB_ENV
+            cat result.txt >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "FILE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "FILE_EXISTS=false" >> $GITHUB_ENV
+            echo "RESULT=Lỗi: Không tìm thấy file result.txt" >> $GITHUB_ENV
+          fi
+
+      - name: Send to Webhook
+        if: always()
+        run: |
+          if [ "${{ env.FILE_EXISTS }}" == "true" ]; then
+         
+            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${{ env.RESULT }}'''))")
+          else
+            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${{ env.RESULT }}'''))")
+          fi
+          
           curl -X POST https://vphuc.online/api/webhook.php \
             -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "result=$(cat result.txt 2>/dev/null || echo 'Lỗi không có kết quả')"
+            -d "result=$ENCODED" \
+            -w "\nHTTP Code: %{http_code}\n" \
+            --fail --silent --show-error
+
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs
+          path: |
+            result.txt
+            debug.log
+            *.log
+          retention-days: 7
