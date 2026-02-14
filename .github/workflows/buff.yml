@@ -1,0 +1,32 @@
+name: follow_facebook
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: 'Key Tool'
+        required: true
+        type: string
+      link:
+        description: 'Link Facebook'
+        required: true
+        type: string
+
+jobs:
+  buff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CheckOut Code
+        uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: curl, json
+      
+      - name: Run Script
+        run: php buff.php
+        env:
+          INPUT_KEY: ${{ github.event.inputs.key }}
+          INPUT_LINK: ${{ github.event.inputs.link }}
