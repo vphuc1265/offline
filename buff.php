@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 define('GIST_TOKEN', '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');
-define('GIST_ID', '123321'); 
+define('GIST_ID', '6eaf110c6672bd20fc0920fe4ce03fc8'); 
 $current_dir = __DIR__;
 $result_file = $current_dir . '/result.txt';
 $debug_file = $current_dir . '/debug.log';
