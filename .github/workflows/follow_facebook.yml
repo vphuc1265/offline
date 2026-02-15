@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -52,35 +52,22 @@ jobs:
           else
             echo "KHÔNG CÓ FILE debug.log"
           fi
-
-      - name: Prepare Result
-        id: prepare
-        if: always()
-        run: |
-          if [ -f result.txt ]; then
-            CONTENT=$(cat result.txt)
-            # Mã hóa URL bằng Python
-            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$CONTENT'''))")
-            echo "RESULT=$ENCODED" >> $GITHUB_ENV
-            echo "HAS_RESULT=true" >> $GITHUB_ENV
+          echo ""
+          echo "=== NỘI DUNG gist_test.log ==="
+          if [ -f gist_test.log ]; then
+            cat gist_test.log
           else
-            echo "RESULT=Khong%20tim%20thay%20file%20result.txt" >> $GITHUB_ENV
-            echo "HAS_RESULT=false" >> $GITHUB_ENV
+            echo "KHÔNG CÓ FILE gist_test.log"
           fi
-
-      - name: Send to Webhook
-        if: always()
-        run: |
-          echo "Gửi kết quả: ${{ env.RESULT }}"
-          curl -v "https://vphuc.online/api/webhook.php?result=${{ env.RESULT }}"
 
       - name: Upload Logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: logs
           path: |
             result.txt
             debug.log
+            gist_test.log
             *.log
           retention-days: 7
